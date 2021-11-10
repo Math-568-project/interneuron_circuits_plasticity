@@ -21,13 +21,12 @@ pip install cpython
 pip install --upgrade setuptools
 ```
 Then, you have to install the compiler for c++, and the official installation document recommend you to install visual studio if you are using Windows. But I think it is the visual studio is too big, and you only use the compiler. Thus, I recommend you to install the MinGW. Here is a [good installation guidelines](https://www.ics.uci.edu/~pattis/common/handouts/mingweclipse/mingw.html), it may work. If it does not work, you can text me.
-###  sacred
+### sacred
 ```
 pip install sacred
 ```
 
-
 # Running
-Currently, the code is still not very readable but runnable. I do not understand all the details of the code and I will try to improve it later. \
+Currently, the code is still not very readable but runnable. I do not understand all the details of the code and I will try to improve it later.\
 Notice that the code is extremely memory-hungry !!!!!\
 As for running, you just run the ```Spiking_model.py```
