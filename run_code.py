@@ -5,7 +5,6 @@ from sacred.observers import FileStorageObserver
 from Spiking_model import ex
 import sys
 
-sys.setrecursionlimit(20)
 ex.observers.append(FileStorageObserver.create('Spiking_model'))
 ex.run('run_network')
 """

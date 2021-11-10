@@ -8,7 +8,6 @@ Created on Mon Mar  6 14:12:15 2017
 @author: kwilmes
 """
 import os
-import shutil
 from tempfile import mkdtemp
 import numpy as np
 import pickle
@@ -17,59 +16,16 @@ from brian2 import *
 from brian2tools import *
 from sacred import Experiment
 
-ex = Experiment("L23_network")
-
 from analyse_experiment import *
 from plot_Spikingmodel import *
+from utils import *
 
-
-class Struct:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
-
-
-class TmpExpDir(object):
-    """A context manager that creates and deletes temporary directories.
-        """
-    def __init__(self, base_dir="./"):
-        self._base_dir = base_dir
-        self._exp_dir = None
-
-    def __enter__(self):
-        # create a temporary directory into which we will store all our files
-        # it will be placed into the current directory but you could change that
-        self._exp_dir = mkdtemp(dir=self._base_dir)
-        return self._exp_dir
-
-    def __exit__(self, *args):
-        # at the very end of the run delete the temporary directory
-        # sacred will have taken care of copying all the results files over
-        # to the run directoy
-        if self._exp_dir is not None:
-            shutil.rmtree(self._exp_dir)
-
-
-def calc_impact(con_REC):
-    pop1impact = np.mean(con_REC['i<100 and j>100'])
-    otherimpact = (np.mean(con_REC['i>100 and i<300 and j>300']) +
-                   np.mean(con_REC['i>200 and j>100 and j<200']) +
-                   np.mean(con_REC['i>100 and i<200 and j>200 and j<300']) +
-                   np.mean(con_REC['i>300 and j>200 and j<300'])) / 4
-    self_impact = (np.mean(con_REC['i<100 and j<100']) +
-                   np.mean(con_REC['i>100 and i<200 and j>100 and j<200']) +
-                   np.mean(con_REC['i>200 and i<300 and j>200 and j<300']) +
-                   np.mean(con_REC['i>300 and i<400 and j>300 and j<400'])) / 4
-    impact_normtoself = (pop1impact - otherimpact) / self_impact
-    impact_normtomax = (pop1impact - otherimpact) / np.max(con_REC)
-    print("impact")
-
-    return impact_normtoself, impact_normtomax
+ex = Experiment("L23_network")
 
 
 # function that defines parameters of the model:
 @ex.config
 def config():
-
     params = {
         # simulation parameters
         'plot':
@@ -83,9 +39,9 @@ def config():
         'reward_simtime':
         24.5 * second,  # 24.5*second, 	# plasticity, with reward
         'noreward_simtime':
-        45 * second,  # 45*second, 		# plasticity, without reward
+        45 * second,  # plasticity, without reward
         'noSSTPV_simtime':
-        21 * second,  # 21*second, 		# plasticity, without reward 
+        21 * second,  # plasticity, without reward 
         # for Suppl. Figure, we killed SSTPV structure after 45s, therefore the no reward simtime is split up
         'after_simtime':
         1.4 * second,  # no plasticity, to measure tuning
@@ -1090,16 +1046,11 @@ def run_network(params, _run):
     # create a temporary directory into which we will store all files
     # it will be placed into the current directory but this can be changed
     # this temporary directory will automatically be deleted as soon as the with statement ends
-    with TmpExpDir(base_dir="./") as exp_dir:
-        # lets create a filename for storing some data
-        results_file = os.path.join(exp_dir, "results.pkl")
-
-        with open(results_file, 'wb') as f:
-            pickle.dump(results, f)
-
-        # add the result as an artifact, note that the name here is important
-        # as sacred otherwise will try to save to the oddly named tmp subdirectory we created
-        ex.add_artifact(results_file, name=os.path.basename(results_file))
+    # lets create a filename for storing some data
+    results_file = './results/results.pkl'
+    print(results_file)
+    with open(results_file, 'wb') as f:
+        pickle.dump(results, f)
 
     _run.info["output"] = np.ones(3)
 
@@ -1558,16 +1509,14 @@ def run_network(params, _run):
     # create a temporary directory into which we will store all files
     # it will be placed into the current directory but this can be changed
     # this temporary directory will automatically be deleted as soon as the with statement ends
-    with TmpExpDir(base_dir="./") as exp_dir:
-        # lets create a filename for storing some data
-        results_file = os.path.join(exp_dir, "results.pkl")
-        print("Saving results to:", results_file)
-        with open(results_file, 'wb') as f:
-            pickle.dump(results, f)
+    results_file = './results/results2.pkl'
+    print("Saving results to:", results_file)
+    with open(results_file, 'wb') as f:
+        pickle.dump(results, f)
 
         # add the result as an artifact, note that the name here is important
         # as sacred otherwise will try to save to the oddly named tmp subdirectory we created
-        ex.add_artifact(results_file, name=os.path.basename(results_file))
+        # ex.add_artifact(results_file, name=os.path.basename(results_file))
 
 
 @ex.automain
