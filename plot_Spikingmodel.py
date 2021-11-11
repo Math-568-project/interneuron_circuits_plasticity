@@ -1,17 +1,9 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Mar 14 17:46:19 2017
 
-@author: kwilmes
-"""
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
-from matplotlib import rcParams
-from scipy import stats
 import matplotlib.cm as cmaps
+from scipy import stats
 from analyse_experiment import *
-#import colormaps as cmaps
 
 interval = .54
 #for timeframe in [nonplasticwarmup,warmup+.54,warmup+rewardsimtime+.24,total]:

@@ -1,214 +1,19 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-"""
-L2/3: PCs, PVs, SOMs and VIPs receive L4 bottom-up and top-down input
 
-Created on Mon Mar  6 14:12:15 2017
-
-@author: kwilmes
-"""
-import os
 from tempfile import mkdtemp
 import numpy as np
 import pickle
 
 from brian2 import *
 from brian2tools import *
-from sacred import Experiment
 
 from analyse_experiment import *
 from plot_Spikingmodel import *
 from utils import *
-
-ex = Experiment("L23_network")
-
-
-# function that defines parameters of the model:
-@ex.config
-def config():
-    params = {
-        # simulation parameters
-        'plot':
-        False,  # enables plotting during the run
-        'seed':
-        7472,  # random seed       
-        'nonplasticwarmup_simtime':
-        1.4 * second,  # no plasticity, to measure tuning
-        'warmup_simtime':
-        42 * second,  # 42*second, 		# plasticity, no reward
-        'reward_simtime':
-        24.5 * second,  # 24.5*second, 	# plasticity, with reward
-        'noreward_simtime':
-        45 * second,  # plasticity, without reward
-        'noSSTPV_simtime':
-        21 * second,  # plasticity, without reward 
-        # for Suppl. Figure, we killed SSTPV structure after 45s, therefore the no reward simtime is split up
-        'after_simtime':
-        1.4 * second,  # no plasticity, to measure tuning
-        'timestep':
-        0.1 * ms,
-
-        # number of neurons
-        'NPYR':
-        400,  # Number of excitatory L23 PYR cells
-        'NSOM':
-        30 * 4,  # Number of inhibitory SOM cells
-        'NVIP':
-        50,  # Number of inhibitory VIP cells
-        'NPV':
-        120,  # Number of inhibitory PV cells
-        'NTD':
-        100,  # Number of top-down units
-
-        # time constants of synaptic kernels
-        'tau_ampa':
-        5.0 * ms,  # Excitatory synaptic time constant
-        'tau_gaba':
-        10.0 * ms,  # Inhibitory synaptic time constant
-
-        # L4 input
-        'N4':
-        4,  # Number of L4 units
-        'L4_rate':
-        4 / (1 * ms),  # Firing rate of L4 units
-        'orientations':
-        np.array([0.785398163397, 1.57079632679, 2.35619449019,
-                  0.0]),  # Four orientations
-        'input_time':
-        70 *
-        ms,  # stim_time + gap_time, i.e. time between starts of two subsequent stimuli
-        'stim_time':
-        50 * ms,  # duration of stimulus
-
-        # L23 neuron parameters
-        'gl':
-        10.0 * nsiemens,  # Leak conductance
-        'el':
-        -60 * mV,  # Resting potential
-        'er':
-        -80 * mV,  # Inhibitory reversal potential
-        'vt':
-        -50. * mV,  # Spiking threshold
-        'memc':
-        200.0 * pfarad,  # Membrane capacitance 
-        'sigma':
-        2.0 * mV,  # sigma of Ornstein-Uhlenbeck noise
-        'tau_noise':
-        5.0 * ms,  # tau of Ornstein-Uhlenbeck noise
-
-        # Connectivity
-
-        #p_pre_post is the probability of connection from a neuron in the presynaptic population to a neuron in the postsynaptic population
-        #w_pre_post is the synaptic strength of the connection from a neuron in the presynaptic population to a neuron in the postsynaptic population
-        'p_PYR_PYR':
-        1.0,
-        'recurrent_weights':
-        'clip(.01 * randn() + .01, 0, .15)*nS',  # initial weights between PCs
-        'p_SOM_PV':
-        .857,
-        'SOM2PV_weights':
-        'clip(.1 * randn() + .2, 0, 1.0)*nS',  # initial weights between SST and PV
-        'p_L4_TD':
-        1.0,
-        'p_TD_VIP':
-        1.0,
-        'p_PYR_SOM':
-        1.0,
-        'p_PYR_VIP':
-        1.0,
-        'p_PYR_PV':
-        .88,
-        'p_SOM_PYR':
-        1.0,
-        'p_SOM_VIP':
-        1.0,
-        'p_PV_PV':
-        1.0,
-        'p_VIP_SOM':
-        1.0,
-        'p_VIP_PYR':
-        .125,
-        'p_VIP_PV':
-        .125,
-        'p_PV_SOM':
-        .125,
-        'p_PV_PYR':
-        1.0,
-        'p_PV_VIP':
-        1.0,
-        'p_VIP_VIP':
-        .125,
-        'p_SOM_SOM':
-        .125,
-        'w_PYR_SOM':
-        0.07 * nS,
-        'w_PYR_VIP':
-        0.07 * nS,
-        'w_PYR_PV':
-        .12 * nS,
-        'w_SOM_PYR':
-        0.3 * nS,
-        'w_SOM_VIP':
-        0.42 * nS,
-        'w_PV_PV':
-        0.55 * nS,
-        'w_VIP_SOM':
-        0.195 * nS,
-        'w_PV_SOM':
-        0.08 * nS,
-        'w_PV_PYR':
-        0.55 * nS,
-        'w_PV_VIP':
-        0.12 * nS,
-        'w_VIP_PYR':
-        .0675 * nS,
-        'w_VIP_PV':
-        .0675 * nS,
-        'w_VIP_VIP':
-        .0 * nS,
-        'w_SOM_SOM':
-        .0675 * nS,
-        'w_L4PYR':
-        .28 * nS,
-        'w_FFPYR':
-        .13 * nS,
-        'w_FFPV':
-        .01 * nS,
-        'w_FFSOM':
-        .15 * nS,
-        'w_TDVIP':
-        .2 * nS,
-
-        # gap junction parameters
-        'w_gap':
-        0 * nS,  # sub-threshold coupling
-        'c_gap':
-        13 * pA,  # spikelet current
-        'tau_spikelet':
-        9.0 * ms,  # spikelet time constant
-
-        # Plasticity parameters
-        'tau_stdp':
-        20 * ms,  # STDP time constant at excitatory synapses
-        'tau_istdp':
-        20 * ms,  # STDP time constant at inhibitory synapses
-        'dApre':
-        .005,  # STDP amplitude
-        'dApre_i':
-        0.015,  # Inhibitory STDP amplitude
-        'gmax':
-        .25 * nS,  # maximum synaptic weight for excitatory synapses       
-        'gmax_SSTPV':
-        1.0 * nS,  # maximum synaptic weight for SST-to-PV synapses
-        'relbound':
-        .1,  # maximum synaptic weight bound relative to initial weight
-        'restplastic':
-        False,  # if True all connections are plastic
-    }
+from params import params
 
 
-@ex.command
-def run_network(params, _run):
+def run_network(params):
 
     # get parameters
     p = Struct(**params)
@@ -292,7 +97,8 @@ def run_network(params, _run):
     gapfiller.gap_rate = linked_var(layer4, 'gap_rate')
 
     # selectivities for N4 = 4 neurons: 180, 45, 90, and 135 degrees in radians
-    layer4.selectivity = '(i%N4)/(1.0*N4)*pi'  # for each L4 neuron, selectivity between 0 and pi
+    # for each L4 neuron, selectivity between 0 and pi
+    layer4.selectivity = '(i%N4)/(1.0*N4)*pi'
     # Choose one of the four preferred oriented bars every 70ms (discrete stimulus)
     # idx = int(floor(rand()*N4)) for N4=4 samples uniformly from [0,1,2,3]
     # orientation = (idx%4)/(1.0*4)*pi
@@ -319,12 +125,13 @@ def run_network(params, _run):
     '''
 
     # Excitatory synapses
-    STDP_E = '''w : siemens
-                gmax : siemens
-                dApre/dt = -Apre / tau_stdp : siemens (event-driven)
-                dApost/dt = -Apost / tau_stdp : siemens (event-driven)
-                plastic : boolean (shared)
-                '''
+    STDP_E = '''
+            w : siemens
+            gmax : siemens
+            dApre/dt = -Apre / tau_stdp : siemens (event-driven)
+            dApost/dt = -Apost / tau_stdp : siemens (event-driven)
+            plastic : boolean (shared)
+            '''
     # STDP at excitatory synapses
     on_pre_STDP_E = '''g_ampa += w
                     Apre += dApre
@@ -1052,8 +859,6 @@ def run_network(params, _run):
     with open(results_file, 'wb') as f:
         pickle.dump(results, f)
 
-    _run.info["output"] = np.ones(3)
-
     # Data postprocessing
 
     # calculate impact of pyr0 onto others in weight matrix
@@ -1514,11 +1319,6 @@ def run_network(params, _run):
     with open(results_file, 'wb') as f:
         pickle.dump(results, f)
 
-        # add the result as an artifact, note that the name here is important
-        # as sacred otherwise will try to save to the oddly named tmp subdirectory we created
-        # ex.add_artifact(results_file, name=os.path.basename(results_file))
-
-
-@ex.automain
-def main(params):
-    run_network()
+    # add the result as an artifact, note that the name here is important
+    # as sacred otherwise will try to save to the oddly named tmp subdirectory we created
+    # ex.add_artifact(results_file, name=os.path.basename(results_file))

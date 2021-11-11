@@ -8,11 +8,8 @@ from brian2 import *
 from brian2tools import *
 import matplotlib.pyplot as plt
 import matplotlib.cm as cmaps
-#import colormaps as cmaps
-
-from sacred.serializer import restore
-
 import numpy as np
+#import colormaps as cmaps
 
 
 class ExperimentReader(object):
