@@ -1,5 +1,6 @@
 from brian2 import *
 
+
 params = {
     # enables plotting during the run
     'plot': False,

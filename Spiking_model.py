@@ -12,6 +12,8 @@ from plot_Spikingmodel import *
 from utils import *
 from params import params
 
+RESULTS_DIR = './results'
+
 
 def run_network(params):
 
@@ -854,8 +856,10 @@ def run_network(params):
     # it will be placed into the current directory but this can be changed
     # this temporary directory will automatically be deleted as soon as the with statement ends
     # lets create a filename for storing some data
-    results_file = './results/results.pkl'
-    print(results_file)
+    results_file = RESULTS_DIR + '/results.pkl'
+    print('Saving results to: ' + results_file)
+    if not os.path.exists(RESULTS_DIR):
+        os.mkdir(RESULTS_DIR)
     with open(results_file, 'wb') as f:
         pickle.dump(results, f)
 
@@ -1311,14 +1315,9 @@ def run_network(params):
         'PVrate': PVmon.smooth_rate(window='flat', width=0.5 * ms),
     }
 
-    # create a temporary directory into which we will store all files
-    # it will be placed into the current directory but this can be changed
-    # this temporary directory will automatically be deleted as soon as the with statement ends
+    
     results_file = './results/results2.pkl'
     print("Saving results to:", results_file)
     with open(results_file, 'wb') as f:
         pickle.dump(results, f)
-
-    # add the result as an artifact, note that the name here is important
-    # as sacred otherwise will try to save to the oddly named tmp subdirectory we created
     # ex.add_artifact(results_file, name=os.path.basename(results_file))
