@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cmaps
 from scipy import stats
 from analyse_experiment import *
+import pickle
+from params import params
 
 interval = .54
-#for timeframe in [nonplasticwarmup,warmup+.54,warmup+rewardsimtime+.24,total]:
-#for 70ms 20 ms gap
 interval = .63
 halfinterval = .28
 input_time = .07
@@ -54,7 +54,8 @@ def plot_alltuningcurves(tunings_initial,
                      color=cmaps.magma(0.7),
                      lw=.5,
                      label='after refinement phase')
-        plt.xticks(np.arange(0, N_pop), ('|', '/', '--', '\\'))
+        if N_pop > 1:
+            plt.xticks(np.arange(0, N_pop), ('|', '/', '--', '\\'))
         plt.yticks(np.arange(0, ymax + 1, 2))
 
         if (k / groupsize) + 1 == 3:
@@ -744,40 +745,31 @@ def plot_xcorr2(pyr1, pyr2, sst, pv, condition=None):
 
 
 if __name__ == "__main__":
-    dataname = 'Spiking_model'
-    savepath = './'
+    dataname = 'results2_plot'
+    savepath = '.'
+    result_path = 'results/results2.pkl'
+    with open(result_path, 'rb') as f:
+        results = pickle.load(f)
     Wrecafterreward = False
     Wrecafterwarmup = False
     xcorr = False  # plot correllograms if True
     plastic = False  # plot all synaptic weight changes if True
-    reader = ExperimentReader('./%s' % dataname)
-    # load all runs at once
-    runs = reader.get_all_experiment_runs()
     run_nos = np.arange(1, 2).astype(str)  # TD removed, BCM type PYR-VIP
     # look at the config for run 1
-    no_stimuli = runs[run_nos[0]]['config']['params']['N4']
-    N_pyr = runs[run_nos[0]]['config']['params']['NPYR']
+    no_stimuli = params['N4']
+    N_pyr = params['NPYR']
     N_pop = 4
-    N_sst = runs[run_nos[0]]['config']['params']['NSOM']
-    N_pv = runs[run_nos[0]]['config']['params']['NPV']
-    N_vip = runs[run_nos[0]]['config']['params']['NVIP']
-    seed = runs[run_nos[0]]['config']['params']['seed']
-    nonplasticwarmup = runs[run_nos[0]]['config']['params'][
-        'nonplasticwarmup_simtime']['py/reduce'][1]['py/tuple'][0]['values']
-    plasticwarmup = runs[run_nos[0]]['config']['params']['warmup_simtime'][
-        'py/reduce'][1]['py/tuple'][0]['values']
-    rewardsimtime = runs[run_nos[0]]['config']['params']['reward_simtime'][
-        'py/reduce'][1]['py/tuple'][0]['values']
-    norewardsimtime = runs[run_nos[0]]['config']['params']['noreward_simtime'][
-        'py/reduce'][1]['py/tuple'][0]['values']
-    noSSTPVsimtime = runs[run_nos[0]]['config']['params']['noSSTPV_simtime'][
-        'py/reduce'][1]['py/tuple'][0]['values']
-
-    gmax = runs[run_nos[0]]['config']['params']['gmax']['py/reduce'][1][
-        'py/tuple'][0]['values'] * siemens
-
-    input_time = runs[run_nos[0]]['config']['params']['input_time'][
-        'py/reduce'][1]['py/tuple'][0]['values']
+    N_sst = params['NSOM']
+    N_pv = params['NPV']
+    N_vip = params['NVIP']
+    seed = params['seed']
+    nonplasticwarmup = params['nonplasticwarmup_simtime'] / second
+    plasticwarmup = params['warmup_simtime'] / second
+    rewardsimtime = params['reward_simtime'] / second
+    norewardsimtime = params['noreward_simtime'] / second
+    noSSTPVsimtime = params['noSSTPV_simtime'] / second
+    gmax = params['gmax']
+    input_time = params['input_time'] / second
     warmup = nonplasticwarmup + plasticwarmup
     total = warmup + rewardsimtime + norewardsimtime + nonplasticwarmup + noSSTPVsimtime
 
@@ -795,9 +787,7 @@ if __name__ == "__main__":
     con_SOM_VIP_j = np.zeros((len(run_nos), N_sst * N_vip))
     con_VIP_SOM_i = np.zeros((len(run_nos), N_vip * N_sst))
     con_VIP_SOM_j = np.zeros((len(run_nos), N_vip * N_sst))
-
     r_pyr = np.zeros((len(run_nos), N_pyr))
-
     rel_select_increase_mean = np.zeros((len(run_nos)))
     rel_select_increase = np.zeros((len(run_nos), N_pop))
     resp_increase = np.zeros((len(run_nos), N_pop))
@@ -817,7 +807,6 @@ if __name__ == "__main__":
     tuning = np.zeros((len(run_nos)))
     SOM0VIPprob = np.zeros((len(run_nos), int(N_sst / 30)))
     VIPSOM0prob = np.zeros((len(run_nos), int(N_sst / 30)))
-
     tuning_initial = np.zeros((len(run_nos), N_pop, N_pop))
     tuning_final = np.zeros((len(run_nos), N_pop, N_pop))
     SSTtuning_initial = np.zeros((len(run_nos), N_pop, N_pop))
@@ -826,33 +815,22 @@ if __name__ == "__main__":
     PVtuning_final = np.zeros((len(run_nos), N_pop, N_pop))
     VIPtuning_initial = np.zeros((len(run_nos), N_pop, N_pop))
     VIPtuning_final = np.zeros((len(run_nos), N_pop, N_pop))
-
     W_sst_pv_means = np.zeros((len(run_nos), N_pop))
     W_sst_pv_std = np.zeros((len(run_nos), N_pop))
     W_sst_pv_means_afterreward = np.zeros((N_pop))
     W_sst_pv_std_afterreward = np.zeros((N_pop))
-
     varied_param2 = 'tau_spikelet'
     varied_param = 'p_PV_PYR'
-
-    plt.register_cmap(name='viridis', cmap=cmaps.viridis)
     plt.set_cmap(cmaps.viridis)
-
     checker = None
 
     for i, run_no in enumerate(run_nos):
-        all_data = reader.try_loading_artifacts(run_no)
-
-        # get parameter
-        config = runs[run_no]['config']
-
-        dep_param[i] = runs[run_no]['config']['params'][
-            varied_param]  #['py/reduce'][1]['py/tuple'][0]['values']
-        dep_param2[i] = runs[run_no]['config']['params'][varied_param2][
-            'py/reduce'][1]['py/tuple'][0]['values']
-
-        results = all_data['results.pkl']
-
+        save_dir = os.path.join(savepath, dataname, run_no)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        print(f'Saving to {save_dir}')
+        dep_param[i] = params[varied_param]
+        dep_param2[i] = params[varied_param2]
         PYRi = results['PYRi'][:]
         PYRt = results['PYRt'][:]
         SSTi = results['SSTi'][:]
@@ -861,9 +839,6 @@ if __name__ == "__main__":
         PVt = results['PVt'][:]
         VIPi = results['VIPi'][:]
         VIPt = results['VIPt'][:]
-
-        # recurrent weights
-
         W_rec = results['weights_rec']
 
         # second population

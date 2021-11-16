@@ -21,12 +21,13 @@ pip install cpython
 pip install --upgrade setuptools
 ```
 Then, you have to install the compiler for c++, and the official installation document recommend you to install visual studio if you are using Windows. But I think it is the visual studio is too big, and you only use the compiler. Thus, I recommend you to install the MinGW. Here is a [good installation guidelines](https://www.ics.uci.edu/~pattis/common/handouts/mingweclipse/mingw.html), it may work. If it does not work, you can text me.
-### sacred
-```
-pip install sacred
-```
+
 
 # Running
+## Simulation
 Currently, the code is still not very readable but runnable. I do not understand all the details of the code and I will try to improve it later.\
 Notice that the code is extremely memory-hungry !!!!!\
-As for running, you just run the ```Spiking_model.py```
+As for running, you just run the ```main.py```\
+If you prefer to run in the command line, you just run ```python main.py``` in the root directory of this project.\
+## Plotting
+Currently, the ```plot_Spikingmodel.py``` is runnable, but the size of figure may not be good. And I create a ```plot.ipynb``` for the plottings in the project update.

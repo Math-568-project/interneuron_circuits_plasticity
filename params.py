@@ -1,6 +1,5 @@
 from brian2 import *
 
-
 params = {
     # enables plotting during the run
     'plot': False,
@@ -119,7 +118,8 @@ params = {
     'w_gap': 0 * nS,
     # spikelet current
     'c_gap': 13 * pA,
-    'tau_spikelet': 9.0 * ms,  # spikelet time constant
+    # spikelet time constant
+    'tau_spikelet': 9.0 * ms,
 
     # Plasticity parameters
     # STDP time constant at excitatory synapses
