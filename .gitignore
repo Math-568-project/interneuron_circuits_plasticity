@@ -1,2 +1,5 @@
 /results/
 test.ipynb
+.DS_Store
+.gitignore
+.ipynb_checkpoints/default-db9caf6b-c785-417b-884f-5512bb14fde0-checkpoint.ipynb
