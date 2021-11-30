@@ -14,6 +14,8 @@ from params import params
 
 RESULTS_DIR = './results'
 
+TUNED_ORI = 1
+
 
 def run_network(params):
 
@@ -169,7 +171,7 @@ def run_network(params):
     SOM = inh_neurons[:p.NSOM]
     VIP = inh_neurons[p.NSOM:int(p.NSOM + p.NVIP)]
     PV = inh_neurons[int(p.NSOM + p.NVIP):]
-
+    '''
     neuron1 = StateMonitor(PYR, ('v', 'Isyn', 'IsynE', 'IsynI'),
                            record=PYR[0:1])
 
@@ -193,6 +195,7 @@ def run_network(params):
                               record=VIP[0:1])
     PVneuron1 = StateMonitor(PV, ('v', 'Isyn', 'IsynE', 'IsynI'),
                              record=PV[0:1])
+    '''
 
     # Feedforward synaptic connections from L4 to L23
 
@@ -618,7 +621,7 @@ def run_network(params):
                      refractory=2 * ms,
                      method='euler')
 
-    con_ff_td = Synapses(layer4[0:1], TD, on_pre='g_ampa += 0.3*nS')
+    con_ff_td = Synapses(layer4[TUNED_ORI:TUNED_ORI+1], TD, on_pre='g_ampa += 0.3*nS')
     con_ff_td.connect(p=p.p_L4_TD)
 
     # top down input goes onto VIP
@@ -794,7 +797,7 @@ def run_network(params):
     PVi, PVt = sm_PV.it
     VIPi, VIPt = sm_VIP.it
     gapi, gapt = sm_gap.it
-
+    '''
     results = {
         'SOM0PV': SOM0PV.w,
         'SOMotherPV': SOMotherPV.w,
@@ -851,12 +854,18 @@ def run_network(params):
         'SOM4rate': SOM4.smooth_rate(window='flat', width=0.5 * ms),
         'PVrate': PVmon.smooth_rate(window='flat', width=0.5 * ms),
     }
+    '''
+    results = {
+        'PYR_spike_train': PYR_spiketrains,
+        'SOM_spike_train': SOM_spiketrains,
+        'VIP_spike_train': VIP_spiketrains
+    }
 
     # create a temporary directory into which we will store all files
     # it will be placed into the current directory but this can be changed
     # this temporary directory will automatically be deleted as soon as the with statement ends
     # lets create a filename for storing some data
-    results_file = RESULTS_DIR + '/results.pkl'
+    results_file = RESULTS_DIR + f'/results_tuned{TUNED_ORI}_1.pkl'
     print('Saving results to: ' + results_file)
     if not os.path.exists(RESULTS_DIR):
         os.mkdir(RESULTS_DIR)
@@ -867,14 +876,15 @@ def run_network(params):
 
     # calculate impact of pyr0 onto others in weight matrix
     impact, impactmax = calc_impact(con_REC.w)
-
+    '''
     PVrate_initial = get_firingrate(PV_spiketrains, 0 * second,
                                     p.nonplasticwarmup_simtime)
     PVrate_TD = get_firingrate(PV_spiketrains, total_warmup_simtime,
                                total_warmup_simtime + p.reward_simtime)
-
+    '''
     no_stimuli = 4
     # get tuning for all populations to first and last presentation of each stimulus in entire simulation:
+    '''
     tuning_before, tuning_after = get_tuning(PYR_spiketrains,
                                              Stimmonitor.orientation,
                                              Stimmonitor.t, no_stimuli)
@@ -884,6 +894,7 @@ def run_network(params):
                                    Stimmonitor.t, no_stimuli)
     firstPV, lastPV = get_tuning(PV_spiketrains, Stimmonitor.orientation,
                                  Stimmonitor.t, no_stimuli)
+    '''
 
     reward_endtime = total_warmup_simtime + p.reward_simtime  #/p.timestep
     # get times of all stimuli during particular phases of the simulation:
@@ -1023,7 +1034,7 @@ def run_network(params):
                                               startat=total_simtime -
                                               p.after_simtime,
                                               upto=total_simtime)
-
+    '''
     VIPtuning_initial = get_tuning_avgoverperiod(
         VIP_spiketrains,
         Stimmonitor.orientation,
@@ -1066,6 +1077,7 @@ def run_network(params):
                                                startat=total_simtime -
                                                p.after_simtime,
                                                upto=total_simtime)
+    '''
 
     SOMtuning_initial = get_tuning_avgoverperiod(
         SOM_spiketrains,
@@ -1118,6 +1130,13 @@ def run_network(params):
                                                  startat=total_warmup_simtime,
                                                  upto=total_warmup_simtime +
                                                  p.reward_simtime)
+    PYRData = get_spiketrains_foreachstim(PYR_spiketrains,
+                                          Stimmonitor.orientation,
+                                          Stimmonitor.t,
+                                          no_stimuli,
+                                          p.input_time,
+                                          startat=0 * second,
+                                          upto=total_simtime)
     SSTData_reward = get_spiketrains_foreachstim(SOM_spiketrains,
                                                  Stimmonitor.orientation,
                                                  Stimmonitor.t,
@@ -1126,6 +1145,13 @@ def run_network(params):
                                                  startat=total_warmup_simtime,
                                                  upto=total_warmup_simtime +
                                                  p.reward_simtime)
+    SSTData = get_spiketrains_foreachstim(SOM_spiketrains,
+                                          Stimmonitor.orientation,
+                                          Stimmonitor.t,
+                                          no_stimuli,
+                                          p.input_time,
+                                          startat=0 * second,
+                                          upto=total_simtime)
     PVData_reward = get_spiketrains_foreachstim(PV_spiketrains,
                                                 Stimmonitor.orientation,
                                                 Stimmonitor.t,
@@ -1134,6 +1160,13 @@ def run_network(params):
                                                 startat=total_warmup_simtime,
                                                 upto=total_warmup_simtime +
                                                 p.reward_simtime)
+    PVData = get_spiketrains_foreachstim(PV_spiketrains,
+                                         Stimmonitor.orientation,
+                                         Stimmonitor.t,
+                                         no_stimuli,
+                                         p.input_time,
+                                         startat=0 * second,
+                                         upto=total_simtime)
     PYRData_afterreward = get_spiketrains_foreachstim(
         PYR_spiketrains,
         Stimmonitor.orientation,
@@ -1300,10 +1333,22 @@ def run_network(params):
         'SSTData1_reward': SSTData_reward['1'],
         'PYRData0': PYRData_afterreward['0'],
         'PYRData1': PYRData_afterreward['1'],
-        'PVData': PVData_afterreward['0'],
+        'PVData0': PVData_afterreward['0'],
         'PVData1': PVData_afterreward['1'],
-        'SSTData': SSTData_afterreward['0'],
+        'SSTData0': SSTData_afterreward['0'],
         'SSTData1': SSTData_afterreward['1'],
+        'PYRDataAll0': PYRData['0'],  # during stimulus 0
+        'PYRDataAll1': PYRData['1'],  # during stimulus 1
+        'PYRDataAll2': PYRData['2'],  # during stimulus 2
+        'PYRDataAll3': PYRData['3'],  # during stimulus 3
+        'SSTDataAll0': SSTData['0'],
+        'SSTDataAll1': SSTData['1'],
+        'SSTDataAll2': SSTData['2'],
+        'SSTDataAll3': SSTData['3'],
+        'PVDataAll0': PVData['0'],
+        'PVDataAll1': PVData['1'],
+        'PVDataAll2': PVData['2'],
+        'PVDataAll3': PVData['3'],
         'Pyr1rate': PYR1.smooth_rate(window='flat', width=0.5 * ms),
         'Pyr2rate': PYR2.smooth_rate(window='flat', width=0.5 * ms),
         'Pyr3rate': PYR3.smooth_rate(window='flat', width=0.5 * ms),
@@ -1315,9 +1360,7 @@ def run_network(params):
         'PVrate': PVmon.smooth_rate(window='flat', width=0.5 * ms),
     }
 
-    
-    results_file = './results/results2.pkl'
+    results_file = f'./results/results_tuned{TUNED_ORI}_2.pkl'
     print("Saving results to:", results_file)
     with open(results_file, 'wb') as f:
         pickle.dump(results, f)
-    # ex.add_artifact(results_file, name=os.path.basename(results_file))

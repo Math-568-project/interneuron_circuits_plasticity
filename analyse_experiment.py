@@ -115,6 +115,7 @@ def get_stimulus_times(stimuli_orientation, stimuli_t, no_stimuli):
     stimuli = np.zeros((np.shape(stimuli_orientation)[0]))
     orientations = np.unique(stimuli_orientation)
     # convert orientation to category 0,1,2,3
+    print(orientations)
     for i in range(0, no_stimuli):
         stimuli[(stimuli_orientation == orientations[i])] = i
 

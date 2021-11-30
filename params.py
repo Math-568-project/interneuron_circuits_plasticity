@@ -6,7 +6,7 @@ params = {
     # random seed
     'seed': 7472,
     # no plasticity, to measure tuning
-    'nonplasticwarmup_simtime': 1.4 * second,
+    'nonplasticwarmup_simtime': 10 * second,
     # plasticity, no reward
     'warmup_simtime': 42 * second,
     # plasticity, with reward
@@ -17,7 +17,7 @@ params = {
     # for Suppl. Figure, we killed SSTPV structure after 45s, therefore the no reward simtime is split up
     'noSSTPV_simtime': 21 * second,
     # no plasticity, to measure tuning
-    'after_simtime': 1.4 * second,
+    'after_simtime': 10 * second,
     'timestep': 0.1 * ms,
 
     # number of neurons
@@ -43,7 +43,7 @@ params = {
     'N4': 4,
     # Firing rate of L4 units
     'L4_rate': 4 / (1 * ms),
-    # Four orientations
+    # Four orientations: 45 degree, 90 degree, 135 degree, 180 degree
     'orientations':
     np.array([0.785398163397, 1.57079632679, 2.35619449019, 0.0]),
     # stim_time + gap_time, i.e. time between starts of two subsequent stimuli
