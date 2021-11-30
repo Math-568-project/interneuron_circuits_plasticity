@@ -14,7 +14,7 @@ from params import params
 
 RESULTS_DIR = './results'
 
-TUNED_ORI = 1
+TUNED_ORI = 0
 
 
 def run_network(params):
@@ -621,7 +621,9 @@ def run_network(params):
                      refractory=2 * ms,
                      method='euler')
 
-    con_ff_td = Synapses(layer4[TUNED_ORI:TUNED_ORI+1], TD, on_pre='g_ampa += 0.3*nS')
+    con_ff_td = Synapses(layer4[TUNED_ORI:TUNED_ORI + 1],
+                         TD,
+                         on_pre='g_ampa += 0.3*nS')
     con_ff_td.connect(p=p.p_L4_TD)
 
     # top down input goes onto VIP
@@ -783,7 +785,7 @@ def run_network(params):
     con_PV_PYR.plastic = False
     con_PV_VIP.plastic = False
     con_PV_PV.plastic = False
-    run(p.after_simtime)
+    run(p.after_simtime, report='text')
 
     # get spiking information
     PYR_spiketrains = sm_PYR.spike_trains()
