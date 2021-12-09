@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from tempfile import mkdtemp
 import numpy as np
 import pickle
 
@@ -10,7 +9,6 @@ from brian2tools import *
 from analyse_experiment import *
 from plot_Spikingmodel import *
 from utils import *
-from params import params
 
 RESULTS_DIR = './results'
 
@@ -100,7 +98,7 @@ def run_network(params):
                             name='gapfiller')
     gapfiller.gap_rate = linked_var(layer4, 'gap_rate')
 
-    # selectivities for N4 = 4 neurons: 180, 45, 90, and 135 degrees in radians
+    # selectivities for N4 = 4 neurons: 0, 45, 90, and 135 degrees in radians
     # for each L4 neuron, selectivity between 0 and pi
     layer4.selectivity = '(i%N4)/(1.0*N4)*pi'
     # Choose one of the four preferred oriented bars every 70ms (discrete stimulus)
@@ -171,31 +169,6 @@ def run_network(params):
     SOM = inh_neurons[:p.NSOM]
     VIP = inh_neurons[p.NSOM:int(p.NSOM + p.NVIP)]
     PV = inh_neurons[int(p.NSOM + p.NVIP):]
-    '''
-    neuron1 = StateMonitor(PYR, ('v', 'Isyn', 'IsynE', 'IsynI'),
-                           record=PYR[0:1])
-
-    neuron2 = StateMonitor(PYR, ('v', 'Isyn', 'IsynE', 'IsynI'),
-                           record=PYR[100:101])
-    neuron3 = StateMonitor(PYR, ('v', 'IsynE', 'IsynI'), record=PYR[200:201])
-    neuron4 = StateMonitor(PYR, ('v', 'IsynE', 'IsynI'), record=PYR[300:301])
-
-    currents = StateMonitor(PYR, ('IsynE', 'IsynI'),
-                            record=[
-                                0, 1, 2, 3, 4, 100, 101, 102, 103, 104, 200,
-                                201, 202, 203, 204, 300, 301, 302, 303, 304
-                            ])
-
-    SOMneuron1 = StateMonitor(SOM, ('v', 'Isyn', 'IsynE', 'IsynI'),
-                              record=SOM[0:1])
-    SOMneuron2 = StateMonitor(SOM, ('v', 'Isyn', 'IsynE', 'IsynI'),
-                              record=SOM[30:31])
-
-    VIPneuron1 = StateMonitor(VIP, ('v', 'Isyn', 'IsynE', 'IsynI'),
-                              record=VIP[0:1])
-    PVneuron1 = StateMonitor(PV, ('v', 'Isyn', 'IsynE', 'IsynI'),
-                             record=PV[0:1])
-    '''
 
     # Feedforward synaptic connections from L4 to L23
 
@@ -572,27 +545,25 @@ def run_network(params):
     mona = StateMonitor(con_REC,
                         'w',
                         record=con_REC[0:100, 100:400],
-                        dt=100 * ms)  # pyr 1 to others
+                        dt=100 * ms)  # pyr 0 to others
     monb = StateMonitor(con_REC,
                         'w',
                         record=con_REC[100:400, 0:100],
-                        dt=100 * ms)  # other to pyr 1
+                        dt=100 * ms)  # other to pyr 0
     monc = StateMonitor(con_REC,
                         'w',
                         record=con_REC[100:200, 200:400],
-                        dt=100 * ms)  # pyr2 to others
-    mond = StateMonitor(con_REC,
-                        'w',
-                        record=con_REC[300:400, 100:300],
-                        dt=100 * ms)  # pyr 4 to others
+                        dt=100 * ms)  # pyr 1 to others
+    mond = StateMonitor(
+        con_REC,
+        'w',
+        record=con_REC[
+            '(i>=200) and (i<300) and (((j>=100) and (j<200)) or (j>300))'],
+        dt=100 * ms)  # pyr 2 to others
     mone = StateMonitor(con_REC,
                         'w',
-                        record=con_REC[0:100, 0:100],
-                        dt=100 * ms)  # pyr 1 to pyr1
-    monf = StateMonitor(con_REC,
-                        'w',
-                        record=con_REC[100:200, 100:200],
-                        dt=100 * ms)  # pyr 1 to pyr1
+                        record=con_REC[300:400, 100:300],
+                        dt=100 * ms)  # pyr 3 to others
 
     # monitor population rates
     PYR1 = PopulationRateMonitor(PYR[0:100])
@@ -664,7 +635,6 @@ def run_network(params):
     con_PV_PYR.plastic = False
     con_PV_VIP.plastic = False
     con_PV_PV.plastic = False
-
     conREC_start = np.copy(con_REC.w[:])
     run(p.nonplasticwarmup_simtime, report='text')
     store('nonplasticwarmup')
@@ -759,6 +729,8 @@ def run_network(params):
     con_REC.plastic = True
     con_SOM_PV.plastic = True
     run(p.noSSTPV_simtime, report='text')
+    store('afternoSSTPV',
+          filename=f'./checkpoints/tune{TUNED_ORI}_afternoSSTPV.pkl')
     store('afternoSSTPV')
     print('refinement phase done')
 
@@ -1036,7 +1008,7 @@ def run_network(params):
                                               startat=total_simtime -
                                               p.after_simtime,
                                               upto=total_simtime)
-    '''
+
     VIPtuning_initial = get_tuning_avgoverperiod(
         VIP_spiketrains,
         Stimmonitor.orientation,
@@ -1079,7 +1051,6 @@ def run_network(params):
                                                startat=total_simtime -
                                                p.after_simtime,
                                                upto=total_simtime)
-    '''
 
     SOMtuning_initial = get_tuning_avgoverperiod(
         SOM_spiketrains,
@@ -1260,11 +1231,11 @@ def run_network(params):
         'PVtuning_afterwarmup': PVtuning_afterwarmup,
         'PVtuning_rewardend': PVtuning_duringreward,
         'PVtuning_after_rewardend': PVtuning_afterreward,
-        #'VIPtuning_initial': VIPtuning_initial,
-        #'VIPtuning_final': VIPtuning_final,
-        #'VIPtuning_afterwarmup': VIPtuning_afterwarmup,
-        #'VIPtuning_rewardend':VIPtuning_duringreward,
-        #'VIPtuning_after_rewardend':VIPtuning_afterreward,
+        'VIPtuning_initial': VIPtuning_initial,
+        'VIPtuning_final': VIPtuning_final,
+        'VIPtuning_afterwarmup': VIPtuning_afterwarmup,
+        'VIPtuning_rewardend': VIPtuning_duringreward,
+        'VIPtuning_after_rewardend': VIPtuning_afterreward,
         'SOMtuning_initial': SOMtuning_initial,
         'SOMtuning_final': SOMtuning_final,
         'SOMtuning_rewardend': SOMtuning_duringreward,
@@ -1317,8 +1288,7 @@ def run_network(params):
         'otherstoPYR0': monb.w,
         'PYR1toothers': monc.w,
         'PYR2toothers': mond.w,
-        'PYR1toPYR1': mone.w,
-        'PYR2toPYR2': monf.w,
+        'PYR3toothers': mone.w,
         'PYRi': PYRi[:],
         'PYRt': PYRt[:],
         'SSTi': SSTi[:],

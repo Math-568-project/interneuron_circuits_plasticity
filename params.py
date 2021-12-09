@@ -11,7 +11,7 @@ params = {
     'warmup_simtime': 42 * second,
     # plasticity, with reward
     'reward_simtime': 24.5 * second,
-    # plasticity, without reward
+    # plasticity, without rewardf
     'noreward_simtime': 45 * second,
     # plasticity, without reward
     # for Suppl. Figure, we killed SSTPV structure after 45s, therefore the no reward simtime is split up
